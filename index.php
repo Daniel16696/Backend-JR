@@ -10,8 +10,8 @@ require 'vendor/autoload.php';
 require 'conexion.php';
 require 'modelos/usuarios.php';
 require 'modelos/preguntas.php';
-require 'modelos/partidas.php';
 require 'modelos/imagenesAsociadas.php';
+require 'modelos/partidasRegistradas.php';
 
 
 
@@ -307,7 +307,7 @@ $app->get('/buscarUsuarioParaJugar/{id}', function (Request $request, Response $
 
 
 $app->get('/obtenerLaPreguntaAsignada/{idSala}', function (Request $request, Response $response, $args) {
-    $ArrayTresPreguntas = [];
+    // $ArrayTresPreguntas = [];
     $Preguntas = Preguntas::get();
     $CountPreguntas = Preguntas::count();
 
@@ -436,4 +436,85 @@ $app->get('/obtenerImagenes', function (Request $request, Response $response, $a
     return sendOkResponse($Imagenes ->toJson(),$response);
 });
 
+$app->post('/registrarPartida',function(Request $request, Response $response, $args){
+    $datos = $request -> getParsedBody();
+    var_dump($datos);
+    $Partida = new Partidas();
+    $Partida -> idUsuario = $datos['idUsuario'];
+    $Partida -> idUsuarioContrincante = $datos['idUsuarioContrincante'];
+    $Partida -> nicknameUsuarioContrincante = $datos['nicknameUsuarioContrincante'];
+    $Partida -> imagenUsuarioContrincante = $datos['imagenUsuarioContrincante'];
+    $Partida -> EstadoDePartida = $datos['EstadoDePartida'];
+    $Partida -> PalabraDelEstadoDeLaPartida = $datos['PalabraDelEstadoDeLaPartida'];
+    $Partida -> ContadorDelUsuarioAplicacion = $datos['ContadorDelUsuarioAplicacion'];
+    $Partida -> ContadorDelUsuarioContrincante = $datos['ContadorDelUsuarioContrincante'];
+    $Partida -> fechaDeLaPartida = $datos['fechaDeLaPartida'];
+    var_dump($Partida);
+    $Partida -> save();
+});
+
+$app->get('/cogerTresUltimasPartidas/{idUsuario}', function (Request $request, Response $response, $args) {
+    try{
+
+        $Partida = Partidas::OrderBy('fechaDeLaPartida', 'DESC')->where([
+            ['idUsuario', '=',  $args['idUsuario']]
+        ])->limit(3)->get();
+            // if ($Partida) {
+                return sendOkResponse($Partida ->toJson(),$response);
+            // }
+            
+        
+        
+    }catch(Exception $e){
+        $app -> status(400);
+        echo json_encode(array('status'=> 'error', 'message' => $e ->getMessage()));
+    }
+
+});
+
+
+$app->get('/comprobarPalabra/{idPregunta}/{palabraIntroducida}', function (Request $request, Response $response, $args) {
+    try{
+        $arrayDeRepeticiones=array();
+        $Pregunta = Preguntas::where('id', '=', $args['idPregunta'])->get();
+        // echo $Pregunta;
+        if($Pregunta){
+            
+            foreach ($Pregunta as $clave=>$valor) {
+
+                $cadenaSinTildes = quitar_acentos($valor['respuesta']);
+                // var_dump($cadenaSinTildes);
+
+                $cadenaFinal = strtolower($cadenaSinTildes);
+                // echo 'EMPIEZA LA CADENA FINAL'.$cadenaFinal;
+
+                $arrayFinalFormateado = preg_split("/,/", $cadenaFinal);
+                // print_r($arrayFinalFormateado);
+
+
+                foreach ($arrayFinalFormateado as $key => $value) {
+                    // echo $value;
+                    if ($value == $args['palabraIntroducida']) {
+                        // echo "has acertado";
+                        // array_push($arrayDeRepeticiones,$args['palabraIntroducida']);
+                        return json_encode($args['palabraIntroducida']);
+                    }
+                }
+                return json_encode('0');
+            }
+        }
+    }catch(Exception $e){
+        $app -> status(400);
+        echo json_encode(array('status'=> 'error', 'message' => $e ->getMessage()));
+    }
+});
+
+
+function quitar_acentos($cadena){
+    $originales = 'ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûýýþÿ';
+    $modificadas = 'aaaaaaaceeeeiiiidnoooooouuuuybsaaaaaaaceeeeiiiidnoooooouuuyyby';
+    $cadena = utf8_decode($cadena);
+    $cadena = strtr($cadena, utf8_decode($originales), $modificadas);
+    return utf8_encode($cadena);
+}
 $app->run();
