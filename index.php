@@ -40,6 +40,21 @@ $app->get('/', function (Request $request, Response $response, $args) {
     // return $response->getBody()->write("Hello, " . $args['name']);
 });
 
+$bd = new PDO('mysql:host=db738266318.db.1and1.com;dbname=db738266318', 'dbo738266318', 'daniel_96');
+
+$app->get('/obtenerImagenes2', function (Request $request, Response $response, $args) use($db){
+    // Para devolverlos todos los usuarios
+    $Imagenes = $db -> Imagenes::get();
+
+    // para meterle un where y solo devolver lo que queramos
+    // $Usuarios = Usuarios::where('id', '=', '1')->get();
+
+    // imprime en json cada vez que viene aqui
+    // print_r($Usuarios -> toJson());
+
+    // mas recomendado usar esta forma
+    return sendOkResponse($Imagenes ->toJson(),$response);
+});
 // CRUD
 // POST
 $app->post('/nuevoUsuario',function(Request $request, Response $response, $args){
