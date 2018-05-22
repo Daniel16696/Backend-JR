@@ -15,7 +15,7 @@ $capsule = new Capsule;
 // ]);
 
 $capsule->addConnection([
-    'driver'    => "mysqli",
+    'driver'    => "mysql",
     'host'      => "db738266318.db.1and1.com",
     'database'  => "db738266318",
     'username'  => "dbo738266318",
